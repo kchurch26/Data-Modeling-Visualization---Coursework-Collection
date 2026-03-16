@@ -1,0 +1,113 @@
+---
+title: "StatsHW3"
+output:
+  pdf_document: default
+  html_document: default
+date: "2025-02-13"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+_Chapter 3_
+
+## Question 23
+
+```{r}
+library(dplyr)
+library(Sleuth3)
+
+skin_cancer <- ex0323
+#a) There may be a spatial correlation, however the sample size should resolve this. 
+
+par(mfrow = c(1, 2))
+high_sunspot <- subset(ex0323, SunspotActivity == "High")
+low_sunspot <- subset(ex0323, SunspotActivity == "Low")
+
+plot(high_sunspot$Year, high_sunspot$SkinCancerRate, 
+     main = "High Sunspot Activity (2 years prior)")
+plot(low_sunspot$Year, low_sunspot$SkinCancerRate, 
+     main = "Low Sunspot Activity (2 years prior)")
+par(mfrow = c(1, 1))
+
+```
+## Question 25
+
+```{r}
+orange <- case0302
+
+without_outliers <- orange |>
+  filter(Dioxin < 20) 
+boxplot(Dioxin ~ Veteran, data = without_outliers)
+
+```
+
+## Question 29
+
+```{r}
+rain <- case0301
+boxplot(Rainfall ~ Treatment, data=rain)
+unseed <- rain |> filter(Treatment == "Unseeded")
+boxplot (unseed$Rainfall +100, unseed$Rainfall)
+boxplot (unseed$Rainfall +200, unseed$Rainfall)
+boxplot (unseed$Rainfall +300, unseed$Rainfall)
+boxplot (unseed$Rainfall +400, unseed$Rainfall)
+```
+
+_Part b_ 
+```{r}
+boxplot(unseed$Rainfall*2, unseed$Rainfall)
+boxplot(unseed$Rainfall*3, unseed$Rainfall)
+boxplot(unseed$Rainfall*4, unseed$Rainfall)
+boxplot(unseed$Rainfall*5, unseed$Rainfall)
+
+```
+
+_Part c_
+
+The multiplicative plots more closely match the actual data. 
+
+## Question 33
+
+```{r}
+mammal_brain <- ex0333
+
+boxplot(BrainSize ~ LitterSize, data = mammal_brain)
+t.test(BrainSize ~ LitterSize, data = mammal_brain)
+```
+
+The difference between brain sizes depending on mammal litter size is statistically significant with a 0.016 p-value, with the Large group mean being 10.9, a mean difference of 4.1 from the Small group.
+
+## Problem A - Didgeridoo
+
+_Part a_ 
+
+Because all four of the measurements are negative, which indicates the sleep apnoea related symptoms improved with the playing of a digeridoo, compared to the control group. 
+
+_Part b_
+
+The quality of sleep had a pvalue of 0.27, which is not independently statistically significant. 
+
+_Part c_
+
+The most significant measure of improvement was the decrease in partner reported sleep disturbances. 
+
+## Problem B - Vaccine
+
+_I wasn't sure exactly how you wanted us to solve this, we've talked about the concept in class, but I might have missed on the exact part/ formula of how to solve it. I used the internet for some help._
+
+```{r}
+delta <- 1.0     
+sd <- 0.73
+alpha <- 0.05     
+power <- 0.99     
+
+sample_size <- power.t.test(delta = delta, sd = sd, sig.level = alpha, power = power, type = "two.sample")$n
+ceiling(sample_size)
+
+```
+
+This result of 21 students per sample size means a total sample size of 42 students. 
+
+
+

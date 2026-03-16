@@ -1,0 +1,203 @@
+---
+title: "statshw8"
+author: "Katrina Churchill"
+date: "2025-04-16"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 17 
+part a 
+
+```{r}
+library(dplyr)
+library(Sleuth3)
+library(ggplot2)
+
+ex0817 |> ggplot(aes(x=Load, y= Mass)) + geom_point() + geom_jitter() + 
+  geom_smooth(method=lm)
+```
+
+_part b_
+
+```{r}
+flea_beetle <- lm(Mass ~ Load, data=ex0817)
+plot(flea_beetle)
+```
+
+
+_part c_
+The residuals ~ Fitted values graph has an opposite Nike symbol thats downwards sloping. This could suggest a need for transformations, several examples of which are shown below. 
+
+```{r}
+log_beetles <- lm(log(Mass) ~ log(Load), data=ex0817)
+plot(log_beetles)
+
+squared_beetles <- lm(I(Mass^2) ~ Load, data= ex0817)
+plot(squared_beetles)
+
+sqrt_beetles <- lm(I(Mass^(1/2)) ~ Load, data = ex0817)
+plot(sqrt_beetles)
+
+cubedrt_beetles <- lm(I(Mass^(1/3)) ~ log(Load), data = ex0817)
+plot(cubedrt_beetles)
+
+hist(ex0817$Load)
+library(GGally)
+ex0817|> ggpairs()
+```
+
+
+## Question 26
+
+```{r}
+head(ex0826)
+
+metabolic <- lm(Metab ~ I(Mass^(3/4)), data=ex0826)
+summary(metabolic)
+plot(metabolic)
+```
+
+While I'm not totally confident I wrote Kleiber's Law relationship out correctly, if I did, I would not judge this theory as 100% accurate. While the relationship is significant, the plots show many possible concerns, such as leverage issues with an outlier, the residuals V fitted do not follow the straight line at all, and scale location map's line goes off the page. 
+
+## Question 24
+
+```{r}
+hrt_rt <- lm(log(Rate) ~ Age, data = ex0824)
+summary(hrt_rt)
+
+heart_pred <- predict(hrt_rt, interval= "prediction") |> exp()
+plot_data <- cbind(ex0824, heart_pred)
+
+plot(Rate ~ Age, data = ex0824)
+
+lines(plot_data$Age, plot_data$fit)
+
+lines(plot_data$Age, plot_data$lwr)
+lines(plot_data$Age, plot_data$upr)
+```
+
+# Chapter 9
+
+## Question 12
+
+_part a_
+
+```{r}
+library(GGally)
+
+log_mammals <- case0902 |>
+  select(Brain, Body, Gestation, Litter) |>
+  mutate(across(everything(), log))
+
+ggpairs(log_mammals)
+```
+
+_part b_
+
+```{r}
+log_brain_weight <- lm(log(Brain) ~ log(Body) + log(Gestation) + log(Litter), data = case0902)
+summary(log_brain_weight)
+```
+
+_part c_
+
+```{r}
+nolog_mammals <- case0902 |>
+  select(Brain, Body, Gestation, Litter) |>
+  mutate(across(everything()))
+
+ggpairs(nolog_mammals)
+```
+
+The linearity of the log transformed data looks much better than the original data, which is simply because there are so many of the data observances in the smaller ranges, which distorts the visual spread of the data's relationships. 
+
+## Question 21
+
+```{r}
+log_case <- ex0921 |>
+  select(Weight, Ingestion, Organic) |>
+  mutate(across(everything(), log))
+ggpairs(log_case)
+
+log_weight_organic <- lm(log(Ingestion) ~ log(Weight) + log(Organic), data= ex0921)
+```
+
+## Question 16 
+
+_part a_
+```{r}
+head(ex0327)
+ggplot(ex0327, aes(x = DurationOfVisit, y = PollenRemoved, shape = BeeType)) + 
+  geom_point(size = 2.5)
+```
+
+_part b_
+
+```{r}
+Logit <- qlogis(ex0327$PollenRemoved)
+
+ggplot(ex0327, aes(x = DurationOfVisit, y = Logit, shape = BeeType)) +
+  geom_point(size = 2.5)
+```
+
+_part c_
+
+```{r}
+LogDuration <- log(ex0327$DurationOfVisit)
+
+ggplot(ex0327, aes(x = LogDuration, y = Logit, shape = BeeType)) +
+  geom_point(size = 3)
+```
+
+_part d_
+
+```{r}
+Bee <- factor(ex0327$BeeType)
+
+model_interact <- lm(Logit ~ LogDuration * Bee, data = ex0327)
+summary(model_interact)
+```
+
+With the non-significant p-value of the interaction term LogDurations:BeeWorker, there seems to be no conclusive evidence that the proportion of pollen depends on the duration of visit differently between queens and workers. 
+
+_part e_
+
+```{r}
+model_no_interact <- lm(Logit ~ LogDuration + Bee, data = ex0327)
+summary(model_no_interact)
+```
+
+The BeeWorker coefficient is significant in model_no_interact, which means after adjusting for duration, the worker bees remove more pollen on average than queens.
+
+This changed from the model_interact, from part d, because the interaction term allowed the queens and workers to have different slopes and intercepts. But in part e, we assumed workers and queens have the same slope, with different intercepts, which adjusts for duration. 
+
+## Question 18 
+
+_part a_
+
+```{r}
+library(tidyr)
+
+fly_long <- ex0918 |>
+  pivot_longer(cols = c(Females, Males),
+               names_to = "Sex",
+               values_to = "Wingsize")
+
+ggplot(fly_long, aes(x = Latitude, y = Wingsize, color = Continent, shape = Sex)) +
+  geom_point()
+```
+
+_part b_
+
+```{r}
+fly_model <- lm(Wingsize ~ Latitude * Continent + Sex, data = fly_long)
+summary(fly_model)
+```
+
+Because the interaction term Latitude:ContinentNA is not significant, the comparison of wing size and latitude is the same across continents, so we can begin to conclude that the NA flies evolved the same latitude cline as the European flies. 

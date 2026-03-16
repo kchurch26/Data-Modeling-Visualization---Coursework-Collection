@@ -1,0 +1,106 @@
+---
+title: "statfinal"
+author: "Katrina Churchill"
+date: "2025-05-07"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+library(modeldata)
+library(fosdata)
+library(Sleuth3)
+```
+
+## Problem 1
+
+```{r}
+crickets <- modeldata::crickets
+str(crickets)
+??crickets 
+
+t.test(rate ~ species, data=crickets)
+85.58571-62.42941
+
+```
+
+## Problem 2
+
+```{r}
+crickets |> ggplot(aes(x=temp, y =rate, color=species)) + geom_point() + 
+  geom_smooth(method='lm') + 
+  ggtitle("Two Cricket Species Chirp Rates Dependant on the Temperature")
+```
+
+## Problem 3
+
+```{r}
+cricket_mod <- lm(rate ~ temp + species, data=crickets)
+summary(cricket_mod)
+```
+
+## Problem 4
+
+```{r}
+compas_data <- read.csv("https://turtlegraphics.org/stat2300/data/compas2014.csv")
+str(compas_data)
+nrow(compas_data)
+
+fourb <- compas_data |> filter(race=="Caucasian") |> filter(charge=="Battery") |> filter(sex=="Female")
+min(fourb$age)
+
+which.min(fourb$age)
+fourb[20,]
+```
+
+## Problem 6 
+
+```{r}
+logistic_compas_mod <- glm(is_recid ~ score, data=compas_data, family = "binomial")
+summary(logistic_compas_mod)
+
+exp(0.30722)
+
+```
+
+## Problem 7
+
+```{r}
+predict(logistic_compas_mod, data.frame(score = 2), type ='response')
+predict(logistic_compas_mod, data.frame(score = 8), type ='response')
+```
+
+## Problem 8
+
+```{r}
+(.308)/ (1-.308)
+```
+
+## Problem 9
+
+```{r}
+(.125)/ (1-.125)
+
+0.4450867/ 0.1428571
+```
+
+## Problem 9
+
+```{r}
+??ex1122
+str(ex1122)
+
+ex1122 |> select(Debt, Deforest, Pop) |> GGally::ggpairs()
+```
+
+# Problem 10 
+
+```{r}
+deforestation_mod <- lm(Deforest ~ Debt + Pop, data = ex1122)
+summary(deforestation_mod)
+```
+

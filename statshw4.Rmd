@@ -1,0 +1,157 @@
+---
+title: "statshw4"
+author: "Katrina Churchill"
+date: "2025-02-24"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Homework 4
+_conceptual exercises 2,3,9_
+Hand in 19, 26, 27, 28, 29, 31, 32
+
+## Question 19 
+
+```{r}
+library(dplyr)
+library(Sleuth3)
+
+#Part a
+t.test(Humerus ~ Status, data=ex0221)
+
+#Part b
+#t.tests are based on a normal data spread assumption. 
+
+#Part c
+#Yes, a continunity correction would be needed for the Z-statistic. 
+
+#Part d 
+wilcox.test(Humerus ~ Status, data=ex0221)
+
+min(ex0221$Humerus)
+birds_wo_smallest <- ex0221 |> filter(Humerus > 0.659)
+
+t.test(Humerus ~ Status, data=birds_wo_smallest)
+wilcox.test(Humerus ~ Status, data=birds_wo_smallest)
+
+#At first, the t.test pvalue = 0.09236 and the wilcox.test = 0.1718
+#After removing the smallest value, the t.test pvalue =  0.176 and 
+#the wilcox.test = 0.2588
+
+#part e
+#Wilcox tests are resiliant to outliers, while t.test are not, shown by 
+#removing the outlier and the t.test pvalue almost doubling.
+```
+
+## Question 26
+
+```{r}
+#Part a 
+differences <- case0202$Unaffected - case0202$Affected
+hist(differences, breaks = 20)
+t.test(case0202$Unaffected, case0202$Affected, paired = TRUE)
+# There appears to be a right skew of the differences. 
+
+#Part B
+# Compute the log-transformed hippocampus volumes
+log_affected <- log(case0202$Affected)
+log_unaffected <- log(case0202$Unaffected)
+
+log_differences <- log_unaffected - log_affected
+hist(log_differences, breaks = 20)
+#The data spread does not appear to be more symmetric
+
+#Part c
+t.test(log_unaffected, log_affected, paired = TRUE)
+#The pvalue after a log transformation is 0.006463, compared to a 0.006062 
+#before transforming the data, a very small difference. 
+
+#Part d
+mean_log_diff <- mean(log_differences)
+se_log_diff <- sd(log_differences) / sqrt(length(log_differences))
+
+t_critical <- qt(0.975, df = length(log_differences) - 1) 
+ci_lower_log <- mean_log_diff - t_critical * se_log_diff
+ci_upper_log <- mean_log_diff + t_critical * se_log_diff
+
+median_ratio_estimate <- exp(mean_log_diff)
+ci_lower_ratio <- exp(ci_lower_log)
+ci_upper_ratio <- exp(ci_upper_log)
+
+cat("Mean Log Difference:", mean_log_diff, "\n")
+cat("95% CI for Log Difference: (", ci_lower_log, ",", ci_upper_log, ")\n")
+cat("Estimated Median Ratio:", median_ratio_estimate, "\n")
+cat("95% CI for Median Ratio: (", ci_lower_ratio, ",", ci_upper_ratio, ")\n")
+
+```
+
+## Question 27
+
+```{r}
+wilcox.test(log_affected, log_unaffected, paired = TRUE)
+wilcox.test(case0202$Affected, case0202$Unaffected, paired = TRUE)
+
+#The pvalue of the two tests above match because wilcox.test doesn't change with
+# a log transformation, because the ranking is the same. 
+
+#It doesn't seem apparent that the assumptions of the rank test are any more 
+#appropiate on these scales
+
+```
+
+## Question 28
+
+```{r}
+#Part a
+differences_plant <- ex0428$Cross - ex0428$Self
+hist(differences_plant)
+
+#Part b
+t.test(ex0428$Self, ex0428$Cross, paired = TRUE)
+
+#Part c
+t.test(ex0428$Cross, ex0428$Self, paired = TRUE, conf.level = 0.95)
+#I believe this returns the correct confidence interval, I did a different
+#method for an earlier question. 
+
+#Part D
+#The histogram of part a is suggesting quite a large discrepancy between 
+#cross and self fertilized plants, while the pvalues of our tests are not or 
+#barely reaching significance. 
+
+#Part e 
+wilcox.test(ex0428$Self, ex0428$Cross, paired = TRUE)
+```
+
+## Question 29
+
+```{r}
+#Part a
+salvage <- ex0429
+ex0429$Action <- as.integer(ex0429$Action)
+wilcox.test(ex0429$Action, ex0429$PercentLost)
+
+wilcox.test(ex0429$Action, ex0429$PercentLost, conf.int = TRUE, conf.level = .95)
+
+#Part b
+t.test(PercentLost ~ Action, data = ex0429, conf.level = 0.95)
+```
+Between part a and part b, the pvalues were 0.0002534 and 0.008849 respectively. This indicates that the t.test might be missing a problem with the data, possibly an outlier that is skewing significance. Both conclude a strong confidence level. 
+
+##Question 30
+
+```{r}
+sun <- ex0430
+#because I do not see any obvious outliers, I will be using a t.test analysis. 
+sunscreen <- ex0430$Sunscreen
+before <- ex0430$PreTreatment
+
+t.test(before, sunscreen, paired = TRUE, conf.level = .95)
+```
+Personally, there are so many things I will consider when I am tolerating the sun that aren't sunscreen, such as hydration, clothing coverage, direct or indirect sun exposure, outside/ inside, how humid it is, how mch time between the first test, applying, the sunscreen, and going back into the sun, etc. The genetic makeup/ pre-existing conditions could have a big impact too, as someone with a heart condition might not stay in the sun as long the second round. I'm fairly certain women have higher pain tolerances, but worse body temperature regulation. 

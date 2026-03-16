@@ -1,0 +1,187 @@
+---
+title: "stats_hw6"
+author: "Katrina Churchill"
+date: "2025-03-21"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Problem 23
+
+_Complete and make a boxplot showing the oxygen distribution for each bone._
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(Sleuth3)
+library(forcats)
+library(stringr)
+
+ex0523 |> 
+  mutate(Bone = fct_reorder(Bone, as.numeric(str_extract(Bone, "\\d+")))) |>
+  ggplot(aes(x=Bone, y=Oxygen)) + geom_boxplot() 
+
+lm(Oxygen ~ Bone, data=ex0523) |> anova()
+```
+
+Because there is strong statistical significance, we can somewhat preemptively conclude that the Tyrannosaurus Rex was warm-blooded. 
+
+## Problem 24
+
+_Make a boxplot showing distribution of Income 2005 for each IQ quartile. Observe inconstant variance - higher incomes have larger spreads. Make a new boxplot showing the log of Income2005, and use the logarithm of Income2005 in your ANOVA._ 
+
+```{r}
+ex0524 |> ggplot(aes(x=Income2005, y=IQquartile)) + geom_boxplot() + 
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE))
+
+# Larger variances in larger income groups
+
+ex0524 |> ggplot(aes(x=log(Income2005), y=IQquartile)) + geom_boxplot() + 
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE))
+
+income <- ex0524 |>
+  mutate(IQquartile = recode(IQquartile, 
+                             "1stQuartile" = "1", 
+                             "2ndQuartile" = "2", 
+                             "3rdQuartile" = "3", 
+                             "4thQuartile" = "4")) |> 
+  mutate(IQquartile = as.numeric(IQquartile))  #converting quartiles to numeric
+
+lm(IQquartile ~ log(Income2005), data=income) |> anova()
+
+#differences in 4thQuartile to 1stQuartile
+first <- ex0524 |> filter(IQquartile == "1stQuartile") |> 
+  summarize(mean(Income2005))
+fourth <- ex0524 |> filter(IQquartile == "4thQuartile") |> 
+  summarize(mean(Income2005))
+diff <- fourth - first
+print(diff)
+```
+
+The mean income differences between the first and fourth quartile of IQ is $37,892.55. 
+
+## Problem 25
+
+_Make a boxplot showing the log of Income2005 for each group, and reorder the education groups so that "<12" is the first group in the plot, as it should be. Finish the problem using the log(Income2005)._
+
+```{r}
+ex0525 |> mutate(Educ = forcats::fct_relevel(Educ, "<12")) |>
+  ggplot(aes(x=log(Income2005), y=Educ)) + geom_boxplot() +
+  scale_x_continuous(labels = function(x) format(x, scientific = FALSE)) 
+
+education <- ex0525 |>
+  mutate(Educ = recode(Educ, 
+                             "<12" = "1", 
+                             "12" = "2", 
+                             "13-15" = "3", 
+                             "16" = "4",
+                             ">16" = "5")) |> 
+  mutate(Educ = as.numeric(Educ))  #converting educ to numeric
+
+lm(Educ ~ log(Income2005), data=education) |> anova()
+
+everyoneelse <- ex0525 |> filter(Educ != "<12") |> summarize(mean(Income2005))
+lesstwelve <- ex0525 |> filter(Educ == "<12") |> summarize(mean(Income2005))
+
+diff2 <- everyoneelse - lesstwelve
+print(diff2)
+```
+
+## Problem 18
+
+_part a: Estimate means for the model with six independent samples, one for each treatment. Determine the residuals and plot them versus the estimated means. Plot the residuals versus the day on which the investigations was conducted. Is there any indication that the methods of this chapter are not appropriate? (Dr. Clair: just conduct anova f-test to see whether the six treatments have different means)_
+
+_Make a boxplot showing all ten TrtDayGroup protein distributions, and color by Treatment so it's clear which boxes go with which treatments. Re-order the groups so that they appear in numerical order._ 
+
+```{r}
+mouse6 <- ex0518 |> mutate(TrtDayGroup = recode(TrtDayGroup, 
+                             "Group1" = "1", 
+                             "Group2" = "2", 
+                             "Group3" = "3", 
+                             "Group4" = "4",
+                             "Group5" = "5",
+                             "Group6" = "6",
+                             "Group7" = "6",
+                             "Group8" = "6",
+                             "Group9" = "6",
+                             "Group10" = "6",)) |>
+  mutate(TrtDayGroup = factor(TrtDayGroup, levels = c("1", "2", "3", "4", "5", "6"))) 
+
+ggplot(mouse6, aes(x = TrtDayGroup, y = Protein)) + geom_boxplot()
+ 
+mean6mouses <- lm(Protein ~ TrtDayGroup, data=mouse6) 
+anova(mean6mouses)
+```
+
+_part b: _
+
+```{r}
+ex0518 |> mutate(TrtDayGroup = recode(TrtDayGroup, 
+                             "Group1" = "1", 
+                             "Group2" = "2", 
+                             "Group3" = "3", 
+                             "Group4" = "4",
+                             "Group5" = "5",
+                             "Group6" = "6",
+                             "Group7" = "7",
+                             "Group8" = "8",
+                             "Group9" = "9",
+                             "Group10" = "10",)) |>
+  mutate(TrtDayGroup = forcats::fct_relevel(TrtDayGroup, "10", after=9)) |>
+      ggplot(aes(x=TrtDayGroup, y=Protein)) + geom_boxplot() 
+
+mean10mouses <- lm(Protein ~ TrtDayGroup, data=ex0518) 
+anova(mean10mouses)
+```
+
+_part c: _
+
+```{r}
+anova(mean6mouses, mean10mouses)
+```
+
+## Problem InsectSprays
+
+_part a: plot the data._ 
+
+```{r}
+InsectSprays |> ggplot(aes(x=spray, y=count)) +geom_boxplot()
+```
+
+Sprays C, D, and E seem to be more effective. 
+
+_part b: use a one-way anova to test if the three effective sprays have the same mean. _
+
+```{r}
+threebugs <- InsectSprays |> filter(spray %in% c("C", "D", "E"))
+lm(count ~ spray, data=threebugs) |> anova()
+```
+
+A mean of 4.3889 makes sense looking at the boxplot, and with a strong significance. 
+
+_part c: use a one way anova to test if the three less effective sprays have the same means._
+
+```{r}
+otherthreebugs <- InsectSprays |> filter(spray %in% c("A", "B", "F")) 
+lm(count ~ spray, data=otherthreebugs) |> anova()
+```
+
+Because this result is not statistically significant, the mean does not make sense. 
+
+_part d: Would it be appropriate to use a one-way anova on the entire data set? Why or why not?_
+
+I do not believe a one way anova would be appropriate on this whole data set as as a one way anova means there is a independent variable to compare all the other means to. 
+
+_part e: use oneway.test to test the null hypothesis that all of the mean insect counts are the same for the various sprays versus the alternative that they are not, at the signifiance level=0.01 level._ 
+
+```{r}
+oneway.test(count ~ spray, data=InsectSprays)
+```
+
+A p-value is extremely significant, which means I can safely conclude the differences in the means are not due to chance and reject the null hypothesis. 
+

@@ -1,0 +1,256 @@
+---
+title: "hw5"
+author: "Katrina Churchill"
+date: "2025-03-03"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1
+The built-in R data set quakes gives the locations of earthquakes off of Fiji in the 1960’s. Create a plot of the locations of these earthquakes, showing depth with color and magnitude with size.
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(Sleuth3)
+library(maps)
+
+world_map <- map_data("world")
+
+quakes |> ggplot(aes(x=long, y=lat, color = depth, size = mag)) + geom_point() 
+
+ggplot() +
+  geom_polygon(data = world_map, aes(x = long, y = lat, group = group),
+               fill = "gray", color = "black", alpha = 0.5) +
+  geom_point(data = quakes, aes(x = long, y = lat, color = depth, size = mag), alpha=.1) +
+  coord_fixed(xlim = c(160, 190), ylim = c(-30, 0))
+
+```
+
+## Question 5
+
+The mpg data from the ggplot2 package contains fuel economy data for popular cars. Create a scatterplot of highway mileage versus city mileage colored by the number of cylinders. Use geom_jitter so the points don’t overlap.
+
+```{r}
+ggplot2::mpg |> ggplot(aes(x=hwy, y=cty, color = cyl)) + geom_point() + 
+  geom_jitter() + scale_color_gradient(low='green4', high = 'red3') + 
+  geom_label(data= filter(mpg, cty > 30), 
+             aes(label = paste(model, manufacturer, sep = " - ")))
+```
+
+The cyl variable in mpg is an integer. Change it to a factor and recreate the plot. Which do you like better?
+
+```{r}
+ggplot2::mpg |> mutate(cyl = as.factor(cyl)) |>
+  ggplot(aes(x=hwy, y=cty, color = cyl)) + geom_point() + 
+  geom_jitter() +
+  geom_text(data= filter(mpg, cty > 30), aes(color='white',label = paste(model, manufacturer, sep = " - ")))
+
+```
+who knows why white = pink
+
+## Question 13
+
+Create a scatterplot of the percentage of movies that pass the Bechdel test in a given year versus the year that the movie was released. 
+
+```{r}
+bechdel_summary <- fosdata::bechdel |> 
+  mutate(binary = ifelse(binary == "PASS", 1, 0)) |> group_by(year) |>
+  summarize(pass_percent = mean(binary, na.rm = TRUE) * 100)
+
+ggplot(bechdel_summary, aes(x=year, y=pass_percent)) +
+  geom_point(color='blue3') +
+  geom_point(data = filter(bechdel_summary, pass_percent > 50), color = "orange2") 
+  
+```
+
+The cost to earnings ratio is the earnings divided by the budget. Create boxplots of the cost to earnings ratio (in 2013 dollars) of movies made in 2000 or later, split by whether they pass the Bechdel test.
+
+```{r}
+CER <- fosdata::bechdel |> filter(year >= 2000) |> group_by(year) |>
+  mutate(CER = ((domgross+intgross)/ budget_2013))
+
+ggplot(data=CER, aes(x=binary, y=CER)) + 
+  geom_boxplot() + 
+  geom_jitter(aes(color = CER), size = 2, alpha = 0.5) +
+  scale_color_gradient(low='red3', high ='green4')
+
+```
+
+Re-do part (b), except make the boxplot of the log of the cost to earnings ratio. Explain the pros and cons of making this transformation.
+
+```{r}
+library(ggrepel)
+CER <- fosdata::bechdel |> filter(year >= 2000) |> group_by(year) |>
+  mutate(CER = log((domgross+intgross)/ budget_2013))
+
+CER_labels <- CER |> 
+  filter(CER >= 5)
+
+ggplot(data=CER, aes(x=binary, y=CER)) + 
+  geom_boxplot() + 
+  geom_jitter(aes(color = CER), size = 2, alpha = 0.5) +
+  scale_color_gradient(low='red3', high ='green4') +
+  geom_label_repel(data = CER_labels, aes(label = title), size = 3, color = "black", 
+                   fill = "white", alpha = 0.7, label.size = 0.3)
+```
+
+Looking at the second boxplot, it feels much more accurate as a cost earning ratio or PE (price earnings) ratio can be negative with a negative profit. Hollywood is not a guaranteed profit and because of the variety of movie genres we analyzed (not just Avenger blockbusters), it makes a lot more sense to have just above positive PE ratio. 
+
+In addition, there is a more clear relationship between the movies that passed the Bechtel test and those that didn't compared to their price earnings. The blockbusters I mentioned, Iron Man for example, will tend to not pass the Bechtel test, but are known to make a lotttt of money, while a indie art film about the struggles of being a women is much less likely to have the same financial impact (unfortunately).
+
+I did add in the labels of the movies with a PE ratio >= 5, and as you can see, there are more movies with this financial gain that do not pass the Bechtel test. 
+
+## Question 21
+Make a line graph of the total number of babies of each sex versus year.
+
+```{r}
+library(babynames)
+head(babynames)
+
+babynames_summary <- babynames |>
+  group_by(year, sex) |>
+  summarise(total_babies = sum(n), .groups = 'drop')
+
+ggplot(babynames_summary, aes(x= year, y=total_babies, color=sex)) + 
+  geom_line()
+```
+
+## Question 22
+Make a line graph of the number of different names used for each sex versus year.
+
+```{r}
+babynames_summary <- babynames |>
+  group_by(year, sex) |>
+  summarise(num_names = n_distinct(name), .groups = 'drop')
+
+ggplot(babynames_summary, aes(x=year, y=num_names, color=sex)) + geom_line()
+```
+
+## Question 23
+Make a line graph of the total number of babies with your name versus year. If your name doesn’t appear in the data, use the name “Alexa.”
+
+```{r}
+name_to_use <- ifelse("Katrina" %in% unique(babynames$name), "Katrina")
+
+babynames_filtered <- babynames |> filter(name == name_to_use)
+
+babynames_summary <- babynames_filtered |>
+  group_by(year) |>
+  summarise(total_babies = sum(n), .groups = 'drop')
+
+ggplot(babynames_summary, aes(x = year, y = total_babies)) +
+  geom_line(color = "pink2")
+```
+
+## Question 24
+Make a line graph comparing the number of boys named “Bryan” and the number of boys named “Brian” from 1920 to the present.
+
+```{r}
+babynames_filtered <- babynames |>
+  filter(name %in% c("Bryan", "Brian"), sex == "M", year >= 1920)
+
+babynames_summary <- babynames_filtered |>
+  group_by(year, name) |>
+  summarise(total_babies = sum(n), .groups = 'drop')
+
+ggplot(babynames_summary, aes(x = year, y = total_babies, color = name)) +
+  geom_line() 
+
+```
+
+## Question 25
+I wish that I had Jessie’s girl, or maybe Jessie’s guy? On one graph, plot the number of male and female babies named “Jessie” over time.
+
+Three time periods show up in the history of Jessie:
+
+More male than female Jessie.
+More female than male Jessie.
+About the same male and female Jessie.
+Approximately what range of years does each time period span?
+
+```{r}
+babynames_filtered <- babynames |>
+  filter(name == "Jessie", sex %in% c("M", "F"))
+
+babynames_summary <- babynames_filtered |>
+  group_by(year, sex) |>
+  summarise(total_babies = sum(n), .groups = 'drop')
+
+ggplot(babynames_summary, aes(x = year, y = total_babies, color = sex)) +
+  geom_line()
+
+```
+
+More male than female Jessie ~ (1950 - 1980)
+
+More female than male Jessie ~ (1880 - 1950)
+
+About the same male and female Jessie ~ (1980 - present)
+
+## Question 32
+The data flint from fosdata gives the results of tap water lead testing during the Flint, Michigan water crisis in 2015. Figure 7.25 is a graph showing lead levels at first draw (Pb1) for Flint’s eight geographical areas, called “Wards.” The red horizontal line represents the EPA’s “action level” for lead in water, at 15 ppb.
+
+Reproduce this graph as well as you can. The y-axis scale is logarithmic, which you can accomplish with scale_y_log10(). Note that there is no Ward 0 in Flint.
+
+```{r}
+library(tidyr)
+library(tidyverse) 
+library(scales)
+flint <- read.csv('https://turtlegraphics.org/stat2300/data/flint.csv')
+
+flint |> pivot_longer(4:6)
+flint_long <- flint |> 
+  pivot_longer(starts_with("Pb"), names_to = "Draw", values_to = "Lead_Lvl") 
+
+ggplot(flint_long, aes(x = factor(Ward), y = Lead_Lvl)) +
+  geom_boxplot(fill = "white", color = "black") +  
+  scale_y_log10(labels = scales::label_comma()) +  
+  geom_hline(yintercept = 15, linetype = "dashed", color = "red") + 
+  annotate("text", x = 2.2, y = 20, label = "EPA Action Level 15ppb", 
+           color = "red", size = 5, fontface = "bold") +
+  labs(title = "Lead Levels in Flint, Michigan (Pb1) by Ward",
+       x = "Ward",
+       y = "Lead Level at First Draw (log scale)")
+
+```
+
+
+## Question 33
+Recreate this plot as well as you can, using Healy’s GitHub data. Read Healy’s blog post and his follow-up post. Do you think this figure is a reasonable representation of gun violence in the United States?
+
+```{r}
+assaults_raw <- read.csv('https://raw.githubusercontent.com/kjhealy/assault-deaths/master/data/oecd-assault-series-per-100k-standardized-to-2015.csv')
+
+assaults_clean <- assaults_raw |> pivot_longer(starts_with('X'), names_prefix = 'X', 
+                             names_to = 'Year', values_to = "Deaths") |>
+  mutate(Year = as.integer(Year)) |> 
+  filter(!Country %in% c("Mexico", "Estonia"))
+
+ggplot(assaults_clean, aes(x = Year, y = Deaths, group = Country, color = 
+                             (Country == "United States"))) +
+  geom_point(alpha = 0.5) +  
+  geom_smooth() +  
+  scale_color_manual(
+    values = c("TRUE" = "red", "FALSE" = "blue"),
+    labels = c("TRUE" = "United States", "FALSE" = "Other OECD Countries")  # Custom legend labels
+  ) +  
+  labs(title = "Assault Deaths in OECD Countries (Excluding Mexico & Estonia)",
+       x = "Year",
+       y = "Deaths per 100,000",
+       color = "Country")
+
+```
+
+My first reaction is he probably wished he didn't release this, his frustration was very evident in the blog post, and I can sympathasize if his intention wasn't jumping into gun rights politics. 
+
+Hearing his explanations, it makes a lot of sense why he left off the countries he did, but it was interesting that he took them off for the same reasons I would have highlighted them. Americans don't want to compare themselves to Mexico and Estonia, we're the greatest nation ever (obviously), so highlighting that our violence is comparable would have been interesting. 
+
+I do share his concerns on reporting standards, a margin of error or a similar statistic might be appreciated with this kind of cross country comparison. 
+
+However, overall, I would think his representation is reasonable, he highlights his reasons for excluding a few data points and draws a conclusion considering the uncontrolled variables, mainly reporting. 

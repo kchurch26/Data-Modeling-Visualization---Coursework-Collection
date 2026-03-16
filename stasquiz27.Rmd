@@ -1,0 +1,95 @@
+---
+title: "statsquiz27"
+output:
+  pdf_document: default
+  html_document: default
+date: "2025-02-07"
+author: Katrina Churchill
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r Problem 1}
+#Problem 1
+library(dplyr)
+data(storms)
+
+#Part a
+ncol(storms)
+
+#Part b
+nrow(storms)
+
+#Part c
+??storms
+#wind in knots & pressure in millibars
+```
+
+## Problem 2
+
+```{r Problem 2}
+#part a
+hist(storms$wind)
+
+#Partb
+max_wind_storm <- storms |>
+  filter(wind == max(wind)) |>
+  select(year, wind)
+
+print(max_wind_storm)
+```
+
+## Problem 3
+
+```{r}
+#Problem 3
+katrina_data <- storms |>
+  filter(name == "Katrina" & year == "2005") 
+
+plot(katrina_data$long, katrina_data$lat)
+```
+
+## Problem 4
+
+```{r}
+#problem 4
+#Part a
+clean <- c(53, 58)
+swear <- c(69,78, 87, 140)
+
+mean(clean)
+mean(swear)
+mean(swear) - mean(clean)
+
+#Part b
+t.test(clean, swear)
+#pvalue = 0.095
+```
+
+## Problem 5
+
+```{r}
+#Problem 5
+#part a
+
+combined <- c(clean, swear)
+replicated <- replicate(10000,{
+  resample <- sample(combined) 
+  mean(resample[3:6])-mean(resample[1:2])
+})
+  
+table(abs(replicated)>=38)
+
+
+#part b
+hist(combined, breaks =20)
+
+```

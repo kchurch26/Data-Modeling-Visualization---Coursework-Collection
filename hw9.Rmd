@@ -1,0 +1,147 @@
+---
+title: "hw9"
+author: "Katrina Churchill"
+date: "2025-05-05"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(Sleuth3)
+library(dplyr)
+library(ggplot2)
+```
+
+### Chapter 18
+## Question 12
+
+```{r}
+p_unvax <- 0.00369
+p_vax <- 0.001
+population <- 100000
+
+odds_unvax <- p_unvax / (1 - p_unvax)
+odds_vax <- p_vax / (1 - p_vax)
+
+odds_ratio <- odds_unvax / odds_vax
+print(odds_ratio)
+```
+
+Unvaccinated people have 3.7 higher odds of getting the disease, so the protection rate is 73%. 
+
+```{r}
+(p_unvax *population - p_vax*population) / (p_unvax *population)
+```
+
+```{r}
+p_unvax2 <- 0.48052
+p_vax2 <- 0.2
+
+odds_unvax2 <- p_unvax2 / (1 - p_unvax2)
+odds_vax2 <- p_vax2 / (1 - p_vax2)
+
+odds_ratio2 <- odds_unvax2 / odds_vax2
+print(odds_ratio2)
+```
+
+```{r}
+population <- 100000
+
+odds_unvax <- p_unvax2 / (1 - p_unvax2)
+odds_vax <- p_vax2 / (1 - p_vax2)
+
+odds_ratio <- odds_unvax / odds_vax
+
+cases_unvax <- p_unvax2 * population
+cases_vax <- p_vax2 * population
+
+cases_prevented <- cases_unvax - cases_vax
+protection_rate <- cases_prevented / cases_unvax
+print(protection_rate)
+```
+
+The protection rate has dropped to 58%. 
+
+### Chapter 20 
+## Question 11
+
+_part a_ 
+
+```{r}
+fail_model <- glm(Failure ~ Temperature, family = binomial, data=ex2011)
+summary(fail_model)
+```
+
+_part b_ 
+
+```{r}
+coef(fail_model)
+```
+
+The model shows a coefficient of temperature that is different from , at -0.17132.  
+
+_part e_
+
+```{r}
+prob_31 <- predict(fail_model, newdata = data.frame(Temperature = 31), type = 'response')
+print(prob_31)
+```
+
+_part f_
+
+The answer to part e must be treated cautiously because it involves extrapolation, making a prediction outside the range of the available explanatory variable values. In this case, the logistic regression model was fitted using temperature data from 53 degree F to 81 degrees F, so predicting the O-ring failure at 31 degrees F, which is outside this range. 
+
+Extrapolation is risky because the relationship shown in the data might not be present outside of it, especially when 31 degrees is below freezing, which is quite important for temperature failure probabilities. 
+
+## Question 12
+
+_part a_
+
+```{r}
+library(ggplot2)
+ex2012 |> ggplot(aes(x=H, y=log(CK), shape = Group, color = Group)) + geom_point()
+```
+
+It appears that enzymes might be a useful predictors of whether or not a women is a carrier. 
+
+_part c_ 
+
+```{r}
+disease_mod <- glm(Group ~ log(CK) + H, data = ex2012, family = "binomial")
+summary(disease_mod)
+```
+
+When increasing H by 1, you increase the log(odds) of being a DMD disease carrier by 0.14, which multiplies odds by 
+e^0.14 = 1.14. 
+
+_part e_ 
+
+```{r}
+predict(disease_mod, data.frame(CK = c(300,80), H = c(100, 85))) |> diff() |> exp()
+```
+
+## Question 17
+
+```{r}
+ex2017 |> select(-Country) |> GGally::ggpairs()
+
+glm(Stance ~ PQLI + Repression + Competition, data=ex2017, family='binomial') |> summary()
+```
+
+While the pairs graph suggest that competition might be influential factor for the Catholic church's stance, none of the variables are significant, so no conclusions can be made.
+
+## Question 20
+
+```{r}
+self_esteem <- ex1223 |> mutate(esteem = (Esteem1 == 1))
+self_esteem |> mutate(logIncome = log(Income2005)) |>
+select(Educ, logIncome, AFQT, Gender, esteem) |>
+GGally::ggpairs()
+
+self_e <- glm(esteem ~ log(Income2005) + AFQT + Educ + Gender, data=self_esteem, family='binomial')
+summary(self_e)
+```
+
+AFQT has the most significant p-value, but educ and income also are significant, while gender does not have a significant effect. 
